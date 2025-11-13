@@ -20,6 +20,9 @@ export function resolveAssetUrl(input?: string | null): string | undefined {
   // data URI
   if (/^data:/i.test(raw)) return raw;
 
+  // Local bundles (asset:/, file://, etc.)
+  if (/^(?:file|asset|content|app|ms-appx|ms-appdata|expo-file):/i.test(raw)) return raw;
+
   // http(s)
   if (/^https?:\/\//i.test(raw)) {
     return normalizeDicebear(raw);

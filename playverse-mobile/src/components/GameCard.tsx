@@ -10,6 +10,7 @@ import {
   LayoutChangeEvent,
   Modal,
 } from 'react-native';
+import type { ImageSourcePropType } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -122,6 +123,47 @@ const BORDER_W = 2;
 // Neutral gray gradient for the card border (replacing yellow/orange)
 const GRADIENT = ['#334155', '#475569', '#64748B'] as const;
 
+const pulseRidersCover = require('../../assets/images/pulse-riders-cover1.png');
+
+function normalizeGameKey(raw?: string | null) {
+  if (typeof raw !== 'string') return undefined;
+  const ascii = raw
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+  const clean = ascii.replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return clean || undefined;
+}
+
+const FALLBACK_COVERS: Record<string, ImageSourcePropType> = {
+  'pulse riders': pulseRidersCover,
+};
+
+function getFallbackCover(game: Partial<GameType> & { slug?: string; gameId?: string }) {
+  const keys = [
+    game.slug,
+    (game as any)?.gameId,
+    (game as any)?.id,
+    game.title,
+  ];
+  for (const key of keys) {
+    const normalized = normalizeGameKey(key);
+    if (normalized && FALLBACK_COVERS[normalized]) {
+      return FALLBACK_COVERS[normalized];
+    }
+  }
+  return undefined;
+}
+
+function normalizeCoverUrl(raw: unknown): string | undefined {
+  if (typeof raw !== 'string') return undefined;
+  const trimmed = raw.trim();
+  if (!trimmed) return undefined;
+  if (trimmed === 'null' || trimmed === 'undefined') return undefined;
+  return trimmed;
+}
+
 export default function GameCard(props: GameCardProps) {
   const { game, style, onPress, tag, overlayLabel, disabled, onToggleFavorite } = props;
   const showPrices = props.showPrices ?? true;
@@ -132,12 +174,14 @@ export default function GameCard(props: GameCardProps) {
 
   const id = String(game.id ?? game.gameId ?? '');
   const title = game.title ?? 'Juego';
-  const cover = game.cover_url ?? undefined;
-  const coverSource: any = cover
-    ? { uri: cover }
-    : title === 'Pulse Riders'
-      ? require('../../assets/images/pulse-riders.png')
-      : null;
+  const coverUrl =
+    normalizeCoverUrl((game as any)?.cover_url) ??
+    normalizeCoverUrl((game as any)?.coverUrl) ??
+    normalizeCoverUrl((game as any)?.cover);
+  const fallbackCover = getFallbackCover(game);
+
+  const coverSource: ImageSourcePropType | undefined =
+    fallbackCover ?? (coverUrl ? { uri: coverUrl } : undefined);
   const planRaw = useMemo(() => String((game as any).plan ?? '').toLowerCase(), [game]);
   const planLabel: 'Premium' | 'Free' | undefined =
     planRaw === 'premium' ? 'Premium' : planRaw === 'free' ? 'Free' : undefined;
