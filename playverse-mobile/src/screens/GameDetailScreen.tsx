@@ -69,37 +69,37 @@ export default function GameDetailScreen() {
   const gameId = resolvedGameId;
 
   const { width } = useWindowDimensions();
-const heroHeight = 300;
-const slideWidth = Math.max(260, width - spacing.xl * 2);
+  const heroHeight = 300;
+  const slideWidth = Math.max(260, width - spacing.xl * 2);
 
-const pulseRidersCover = require('../../assets/images/pulse-riders-cover1.png');
+  const pulseRidersCover = require('../../assets/images/pulse-riders-cover1.png');
 
-function normalizeGameKey(raw?: string | null) {
-  if (typeof raw !== 'string') return undefined;
-  const ascii = raw
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
-  const clean = ascii.replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
-  return clean || undefined;
-}
-
-function getFallbackCoverUri(target: any): string | undefined {
-  const keys = [
-    target?.slug,
-    target?.gameId ?? target?._id ?? target?.id,
-    target?.title,
-  ];
-  for (const key of keys) {
-    const normalized = normalizeGameKey(key);
-    if (normalized === 'pulse riders') {
-      const resolved = Image.resolveAssetSource(pulseRidersCover);
-      if (resolved?.uri) return resolved.uri;
-    }
+  function normalizeGameKey(raw?: string | null) {
+    if (typeof raw !== 'string') return undefined;
+    const ascii = raw
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+    const clean = ascii.replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+    return clean || undefined;
   }
-  return undefined;
-}
+
+  function getFallbackCoverUri(target: any): string | undefined {
+    const keys = [
+      target?.slug,
+      target?.gameId ?? target?._id ?? target?.id,
+      target?.title,
+    ];
+    for (const key of keys) {
+      const normalized = normalizeGameKey(key);
+      if (normalized === 'pulse riders') {
+        const resolved = Image.resolveAssetSource(pulseRidersCover);
+        if (resolved?.uri) return resolved.uri;
+      }
+    }
+    return undefined;
+  }
 
   /** ===== Fetch del juego ===== */
   const { data: remote, error, loading: loadingRemote } = useConvexQuery<any>(
@@ -850,7 +850,7 @@ function getFallbackCoverUri(target: any): string | undefined {
                 accessibilityRole="button"
                 accessibilityLabel="Cancelar"
               >
-                <Text style={mstyles.btnGhostText}>Cancelar</Text>
+                <Text style={mstyles.btnGhostText}>Cerrar</Text>
               </Pressable>
 
               <Pressable

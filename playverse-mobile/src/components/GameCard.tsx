@@ -19,8 +19,8 @@ import type { Game as GameType } from '../types/game';
 
 let useFavoritesUnsafe: any;
 let useAuthUnsafe: any;
-try { useFavoritesUnsafe = require('../context/FavoritesContext').useFavorites; } catch {}
-try { useAuthUnsafe = require('../context/AuthContext').useAuth; } catch {}
+try { useFavoritesUnsafe = require('../context/FavoritesContext').useFavorites; } catch { }
+try { useAuthUnsafe = require('../context/AuthContext').useAuth; } catch { }
 
 export type GameCardProps = {
   game: GameType & {
@@ -268,7 +268,7 @@ export default function GameCard(props: GameCardProps) {
         await favCtx.toggleFavorite(id, {
           _id: id,
           title,
-          cover_url: cover ?? null,
+          cover_url: game.cover_url ?? null,
           plan: game.plan,
           weeklyPrice: game.weeklyPrice ?? null,
           purchasePrice: game.purchasePrice ?? null,
@@ -327,7 +327,7 @@ export default function GameCard(props: GameCardProps) {
                 accessibilityRole="button"
                 accessibilityLabel="Cancelar"
               >
-                <Text style={mstyles.btnGhostText}>Cancelar</Text>
+                <Text style={mstyles.btnGhostText}>Cerrar</Text>
               </Pressable>
 
               <Pressable
@@ -389,8 +389,8 @@ export default function GameCard(props: GameCardProps) {
                     planLabel === 'Premium'
                       ? styles.tagPremium
                       : planLabel === 'Free'
-                      ? styles.tagFree
-                      : styles.tagDefault,
+                        ? styles.tagFree
+                        : styles.tagDefault,
                   ]}
                 >
                   <Text
@@ -470,46 +470,46 @@ export default function GameCard(props: GameCardProps) {
                           <Text style={[styles.priceLabel, styles.priceLabelRent, { fontSize: priceLabelSize }]} numberOfLines={1} allowFontScaling={false}>
                             Alquiler
                           </Text>
-                        {!!offWeek && !!txtWeekOrig ? (
-                          <Text style={[styles.priceOriginal, compactPrices && styles.priceOriginalCompact]} numberOfLines={1} allowFontScaling={false}>
-                            {txtWeekOrig}/sem
+                          {!!offWeek && !!txtWeekOrig ? (
+                            <Text style={[styles.priceOriginal, compactPrices && styles.priceOriginalCompact]} numberOfLines={1} allowFontScaling={false}>
+                              {txtWeekOrig}/sem
+                            </Text>
+                          ) : null}
+                          <Text style={[styles.priceFinal, styles.priceFinalRent, { fontSize: priceMainSize }]} numberOfLines={1} allowFontScaling={false}>
+                            {txtWeek}
+                            <Text style={[styles.perUnit, compactPrices && styles.perUnitCompact]}>/sem</Text>
                           </Text>
-                        ) : null}
-                        <Text style={[styles.priceFinal, styles.priceFinalRent, { fontSize: priceMainSize }]} numberOfLines={1} allowFontScaling={false}>
-                          {txtWeek}
-                          <Text style={[styles.perUnit, compactPrices && styles.perUnitCompact]}>/sem</Text>
-                        </Text>
-                        {!!offWeek && (
-                          <View style={[styles.offChip, styles.offChipRent]}>
-                            <Text style={styles.offChipText}>-{offWeek}%</Text>
-                          </View>
-                        )}
-                      </>
-                    ) : null}
-                  </View>
+                          {!!offWeek && (
+                            <View style={[styles.offChip, styles.offChipRent]}>
+                              <Text style={styles.offChipText}>-{offWeek}%</Text>
+                            </View>
+                          )}
+                        </>
+                      ) : null}
+                    </View>
 
-                  <View style={[styles.priceCol, styles.priceColRight]}>
-                    {txtBuy ? (
-                      <>
-                        <Text style={[styles.priceLabel, styles.priceLabelBuy, { fontSize: priceLabelSize }]} numberOfLines={1} allowFontScaling={false}>
-                          Compra
-                        </Text>
-                        {!!offBuy && !!txtBuyOrig ? (
-                          <Text style={[styles.priceOriginal, compactPrices && styles.priceOriginalCompact]} numberOfLines={1} allowFontScaling={false}>
-                            {txtBuyOrig}
+                    <View style={[styles.priceCol, styles.priceColRight]}>
+                      {txtBuy ? (
+                        <>
+                          <Text style={[styles.priceLabel, styles.priceLabelBuy, { fontSize: priceLabelSize }]} numberOfLines={1} allowFontScaling={false}>
+                            Compra
                           </Text>
-                        ) : null}
-                        <Text style={[styles.priceFinal, styles.priceFinalBuy, { fontSize: priceMainSize }]} numberOfLines={1} allowFontScaling={false}>
-                          {txtBuy}
-                        </Text>
-                        {!!offBuy && (
-                          <View style={[styles.offChip, styles.offChipBuy]}>
-                            <Text style={styles.offChipText}>-{offBuy}%</Text>
-                          </View>
-                        )}
-                      </>
-                    ) : null}
-                  </View>
+                          {!!offBuy && !!txtBuyOrig ? (
+                            <Text style={[styles.priceOriginal, compactPrices && styles.priceOriginalCompact]} numberOfLines={1} allowFontScaling={false}>
+                              {txtBuyOrig}
+                            </Text>
+                          ) : null}
+                          <Text style={[styles.priceFinal, styles.priceFinalBuy, { fontSize: priceMainSize }]} numberOfLines={1} allowFontScaling={false}>
+                            {txtBuy}
+                          </Text>
+                          {!!offBuy && (
+                            <View style={[styles.offChip, styles.offChipBuy]}>
+                              <Text style={styles.offChipText}>-{offBuy}%</Text>
+                            </View>
+                          )}
+                        </>
+                      ) : null}
+                    </View>
                   </View>
                 ) : null
               ) : null}
@@ -683,7 +683,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   offChipRent: { backgroundColor: '#10242d', borderColor: '#1f546b' },
-  offChipBuy:  { backgroundColor: '#201a05', borderColor: '#F2B705' },
+  offChipBuy: { backgroundColor: '#201a05', borderColor: '#F2B705' },
   offChipText: { color: '#F2B705', fontSize: 11, fontWeight: '900', letterSpacing: 0.4 },
 });
 

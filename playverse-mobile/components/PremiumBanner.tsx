@@ -31,8 +31,8 @@ export default function PremiumBanner() {
           <Text style={[styles.subtitle, { color: colors.white }]}>
             Catálogo ilimitado, descuentos exclusivos, cero publicidad y mucho más
           </Text>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={[styles.discoverButton, { backgroundColor: colors.white }]}
             onPress={handleDiscoverPremium}
           >

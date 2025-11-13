@@ -24,7 +24,7 @@ export default function PremiumScreen() {
       price: '$9,99',
       period: '/mes',
       description: 'Perfecto para probar',
-      features: ['Acceso total', 'Descuentos 10%', 'Cero publicidad', 'Soporte prioritario'],
+      features: ['Acceso total', 'Descuentos 10%', 'Cero publicidad', 'Prioridad en servidores cloud'],
       popular: false,
     },
     {
@@ -35,7 +35,7 @@ export default function PremiumScreen() {
       originalPrice: '$119,99',
       savings: 'Ahorra $30',
       description: 'La mas conveniente',
-      features: ['3 meses gratis', 'Todo lo de mensual', 'Acceso anticipado'],
+      features: ['3 meses gratis', 'Todo lo de mensual', 'Mejor para tu bolsillo'],
       popular: true,
     },
     {
@@ -72,7 +72,7 @@ export default function PremiumScreen() {
           locations={[0, 0.5, 1]}
           style={styles.hero}
         >
-          <View style={[styles.premiumBadge, { backgroundColor: 'rgba(209, 147, 16, 0.2)', borderColor: '#d19310' }, { marginBottom: spacing.lg } ]}>
+          <View style={[styles.premiumBadge, { backgroundColor: 'rgba(209, 147, 16, 0.2)', borderColor: '#d19310' }, { marginBottom: spacing.lg }]}>
             <Ionicons name="star" size={16} color={'#d19310'} />
             <Text style={[styles.premiumBadgeText, { color: '#d19310' }]}>Premium</Text>
           </View>
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   originalPrice: { color: '#D6EEF7', textDecorationLine: 'line-through' },
   savings: { color: '#fff', fontWeight: 'bold' },
   planDesc: { color: '#D6EEF7', opacity: 0.9, textAlign: 'center', marginTop: spacing.xs },
-  featureText: { color: "#fff" , flex: 1 },
+  featureText: { color: "#fff", flex: 1 },
   notice: { color: '#9ED3E6', fontStyle: 'italic', marginBottom: spacing.sm },
   cta: { backgroundColor: colors.accent, borderRadius: radius.pill, paddingHorizontal: 20, paddingVertical: 10 },
   ctaText: { fontWeight: '800', backgroundColor: 'transparent' },
