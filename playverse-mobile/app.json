@@ -1,0 +1,72 @@
+{
+    "expo":  {
+                 "name":  "playverse",
+                 "slug":  "playverse",
+                 "version":  "1.0.0",
+                 "orientation":  "portrait",
+                 "icon":  "./assets/icon.png",
+                 "scheme":  "playverse",
+                 "userInterfaceStyle":  "automatic",
+                 "assetBundlePatterns":  [
+                                             "assets/**"
+                                         ],
+                 "newArchEnabled":  true,
+                 "splash":  {
+                                "image":  "./assets/splash-icon.png",
+                                "resizeMode":  "contain",
+                                "backgroundColor":  "#ffffff"
+                            },
+                 "ios":  {
+                             "supportsTablet":  true
+                         },
+                 "android":  {
+                                 "adaptiveIcon":  {
+                                                      "foregroundImage":  "./assets/adaptive-icon.png",
+                                                      "backgroundColor":  "#ffffff"
+                                                  },
+                                 "edgeToEdgeEnabled":  true,
+                                 "predictiveBackGestureEnabled":  false,
+                                 "intentFilters":  [
+                                                       {
+                                                           "action":  "VIEW",
+                                                           "autoVerify":  false,
+                                                           "data":  [
+                                                                        {
+                                                                            "scheme":  "playverse",
+                                                                            "host":  "*",
+                                                                            "pathPrefix":  "/"
+                                                                        }
+                                                                    ],
+                                                           "category":  [
+                                                                            "BROWSABLE",
+                                                                            "DEFAULT"
+                                                                        ]
+                                                       }
+                                                   ]
+                             },
+                 "web":  {
+                             "bundler":  "metro",
+                             "output":  "static",
+                             "favicon":  "./assets/favicon.png"
+                         },
+                 "plugins":  [
+                                 "expo-router",
+                                 "expo-notifications"
+                             ],
+                 "experiments":  {
+                                     "typedRoutes":  true
+                                 },
+                 "extra":  {
+                               "scheme":  "playverse",
+                               "auth":  {
+                                            "google":  {
+                                                           "expoClientId":  "\u003cTU_WEB_CLIENT_ID\u003e.apps.googleusercontent.com"
+                                                       },
+                                            "microsoft":  {
+                                                              "clientId":  "\u003cTU_AZURE_APP_CLIENT_ID_GUID\u003e",
+                                                              "tenantId":  "common"
+                                                          }
+                                        }
+                           }
+             }
+}

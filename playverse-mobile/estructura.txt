@@ -1,0 +1,20 @@
+﻿playverse/playverse-mobile
+├─ app.config.js                       # Expo config: extra (convexUrl, webAuthUrl, webAssetBase, OAuth IDs)
+├─ src/
+│  ├─ auth/
+│  │  └─ nativeOAuth.ts                # OAuth nativo (Google/Microsoft) usando expo-auth-session + Convex
+│  ├─ components/
+│  │  └─ GameCard.tsx                  # Card responsive con resolveAssetUrl, summary y onPress → GameDetail
+│  ├─ lib/
+│  │  ├─ asset.ts                      # Helper resolveAssetUrl para portadas/trailers (rutas relativas → absolutas)
+│  │  └─ useConvexQuery.ts             # Hook de datos HTTP con polling simple (Convex)
+│  ├─ navigation/
+│  │  └─ AppNavigator.tsx              # Stack/Tab navigation, pasa { gameId, initial } a GameDetail
+│  └─ screens/
+│     ├─ HomeScreen.tsx               # Grid responsiva, envía juego normalizado (initial) a GameDetail
+│     ├─ CatalogScreen.tsx            # Búsqueda/chips/paginación con cards dinámicas y navegación a detalle
+│     ├─ MyGamesScreen.tsx            # Compras/alquileres del usuario (Convex) con cards responsive
+│     ├─ FavoritesScreen.tsx          # Favoritos del usuario (Convex) con cards responsive
+│     ├─ GameDetailScreen.tsx         # Galería + video vía expo-video, mezcla datos iniciales y fetch Convex
+│     └─ ProfileScreen.tsx            # Perfil ligado a Convex (plan, pagos, compras/alquileres) + login nativo
+└─ estructura.txt                      # Este resumen focalizado (sin dependencias)
