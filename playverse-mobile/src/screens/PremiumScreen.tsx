@@ -12,7 +12,7 @@ export default function PremiumScreen() {
   const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const benefits = [
-    { icon: 'download', title: 'Acceso ilimitado', description: 'Descarga y juega todos los juegos sin restricciones' },
+    { icon: 'download', title: 'Prioridad y acceso ilimitado', description: 'Juega todos los juegos sin restricciones y con prioridad en nuestros servidores cloud gaming para una mejor experiencia' },
     { icon: 'hand-left', title: 'Cero publicidad', description: 'Disfruta sin interrupciones ni banners' },
     { icon: 'star', title: 'Descuentos exclusivos', description: 'Hasta 10% de descuento en todas las compras' },
   ];
