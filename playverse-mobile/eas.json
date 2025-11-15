@@ -28,8 +28,8 @@
       "env": {
         "EXPO_USE_NATIVE": "1",
         "EXPO_PUBLIC_CONVEX_URL": "https://quirky-squirrel-924.convex.cloud",
-        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "474411898872-f0th7tiagm44j9ilk2a3o1q1ovk0m388.apps.googleusercontent.com",
-        "EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID": "474411898872-802jgtjn7776oh4d3upohi3il21gh2j3.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "474411898872-802jgtjn7776oh4d3upohi3il21gh2j3.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID": "474411898872-st0u1up0ogch6g4tmosqsa76879lb485.apps.googleusercontent.com",
         "EXPO_PUBLIC_MICROSOFT_CLIENT_ID": "d58b5185-cfc8-4305-ab7e-b7105a9ba30a",
         "EXPO_PUBLIC_MICROSOFT_EXPO_CLIENT_ID": "d58b5185-cfc8-4305-ab7e-b7105a9ba30a",
         "EXPO_PUBLIC_MICROSOFT_TENANT_ID": "common",
@@ -49,3 +49,5 @@
     "production": {}
   }
 }
+
+

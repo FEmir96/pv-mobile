@@ -2,6 +2,7 @@
 import 'react-native-get-random-values';
 import 'react-native-url-polyfill/auto';
 import * as AuthSession from 'expo-auth-session';
+import { ResponseType } from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
@@ -57,8 +58,9 @@ const getParams = (r: AuthSession.AuthSessionResult) =>
 
 type PromptOptions = AuthSession.AuthRequestPromptOptions & { useProxy?: boolean };
 type RedirectSetup = { redirectUri: string; promptOptions: PromptOptions };
+type RedirectOptions = { provider?: 'google' | 'microsoft'; clientId?: string };
 
-function resolveRedirect(): RedirectSetup {
+function resolveRedirect(opts: RedirectOptions = {}): RedirectSetup {
   const isWeb = Platform.OS === 'web';
   const isExpoGo = Constants.appOwnership === 'expo';
 
@@ -77,7 +79,22 @@ function resolveRedirect(): RedirectSetup {
     return { redirectUri, promptOptions: { useProxy: true } as PromptOptions };
   }
 
-  const redirectUri = AuthSession.makeRedirectUri({ scheme: 'playverse', path: 'auth/callback' });
+  let nativeRedirect: string | undefined;
+  if (opts.provider === 'google' && opts.clientId) {
+    const idWithoutSuffix = opts.clientId.replace('.apps.googleusercontent.com', '');
+    nativeRedirect = `com.googleusercontent.apps.${idWithoutSuffix}:/oauthredirect`;
+  }
+
+  const redirectUri = AuthSession.makeRedirectUri(
+    nativeRedirect
+      ? {
+          native: nativeRedirect,
+        }
+      : {
+          scheme: 'playverse',
+          path: 'auth/callback',
+        }
+  );
   console.log('[Auth] Redirect URI (native scheme):', redirectUri);
   return { redirectUri, promptOptions: {} as PromptOptions };
 }
@@ -85,7 +102,6 @@ function resolveRedirect(): RedirectSetup {
 export async function signInWithGoogleNative(): Promise<OAuthResult> {
   const extras = (Constants.expoConfig?.extra || {}) as any;
   const authExtra = extras?.auth?.google ?? {};
-  const { redirectUri, promptOptions } = resolveRedirect();
   const isExpoGo = Constants.appOwnership === 'expo';
 
   const clientId = isExpoGo
@@ -97,12 +113,13 @@ export async function signInWithGoogleNative(): Promise<OAuthResult> {
     : extras.googleClientId ?? process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID;
 
   if (!clientId) return { ok: false, error: 'Missing GOOGLE_CLIENT_ID' };
+  const { redirectUri, promptOptions } = resolveRedirect({ provider: 'google', clientId });
 
   const request = new AuthSession.AuthRequest({
     clientId,
     redirectUri,
-    responseType: 'id_token',
-    usePKCE: false,
+    responseType: ResponseType.Code,
+    usePKCE: true,
     scopes: ['openid', 'email', 'profile'],
     extraParams: { nonce: randomNonce() },
   });
@@ -126,7 +143,29 @@ export async function signInWithGoogleNative(): Promise<OAuthResult> {
   }
 
   const p = getParams(result);
-  const idToken = p.id_token as string | undefined;
+  const code = (p.code as string) ?? (result as any).code;
+  if (!code) return { ok: false, error: 'Missing authorization code' };
+
+  let idToken: string | undefined;
+  try {
+    const tokenResponse = await AuthSession.exchangeCodeAsync(
+      {
+        clientId,
+        code,
+        redirectUri,
+        extraParams: {
+          code_verifier: request.codeVerifier ?? '',
+        },
+      },
+      {
+        tokenEndpoint: 'https://oauth2.googleapis.com/token',
+      }
+    );
+    idToken = (tokenResponse as any).id_token || tokenResponse.idToken;
+  } catch (tokenError: any) {
+    return { ok: false, error: tokenError?.message || 'Token exchange failed' };
+  }
+
   if (!idToken) return { ok: false, error: 'Missing id_token' };
 
   const payload = b64UrlJson<any>(idToken.split('.')[1]);

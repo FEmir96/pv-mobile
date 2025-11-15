@@ -2,6 +2,9 @@
 import "dotenv/config";
 
 const USE_NATIVE = process.env.EXPO_USE_NATIVE === "1";
+const GOOGLE_ANDROID_SCHEME = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID
+  ? `com.googleusercontent.apps.${process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID.replace(".apps.googleusercontent.com", "")}`
+  : undefined;
 
 export default {
   expo: {
@@ -38,6 +41,33 @@ export default {
         "WAKE_LOCK",
         "RECEIVE_BOOT_COMPLETED",
         "POST_NOTIFICATIONS",
+      ],
+      intentFilters: [
+        {
+          action: "VIEW",
+          category: ["BROWSABLE", "DEFAULT"],
+          data: [
+            {
+              scheme: "playverse",
+              host: "auth",
+              pathPrefix: "/callback",
+            },
+          ],
+        },
+        ...(GOOGLE_ANDROID_SCHEME
+          ? [
+              {
+                action: "VIEW",
+                category: ["BROWSABLE", "DEFAULT"],
+                data: [
+                  {
+                    scheme: GOOGLE_ANDROID_SCHEME,
+                    host: "oauthredirect",
+                  },
+                ],
+              },
+            ]
+          : []),
       ],
     },
     web: {
