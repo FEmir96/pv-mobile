@@ -561,7 +561,7 @@ function FAQ({ onContactPress }: { onContactPress: () => void }) {
     },
     {
       q: '¿Qué incluye la membresía Premium?',
-      a: 'Acceso ilimitado a nuestra biblioteca, descuentos exclusivos y cero publicidad.',
+      a: 'Acceso ilimitado a nuestra biblioteca, descuentos exclusivos, prioridad en servidores y cero publicidad.',
     },
     {
       q: '¿Puedo cancelar mi suscripción?',
