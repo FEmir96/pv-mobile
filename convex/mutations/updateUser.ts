@@ -1,4 +1,4 @@
-// convex/functions/mutations/updateUser.ts
+﻿// convex/functions/mutations/updateUser.ts
 import { mutation } from "../_generated/server";
 import { v } from "convex/values";
 
@@ -41,7 +41,7 @@ export const updateUser = mutation({
         .withIndex("by_email", (q) => q.eq("email", email))
         .unique();
       if (dupe && String(dupe._id) !== String(userId)) {
-        throw new Error(`El email "${email}" ya está en uso por otro usuario.`);
+        throw new Error(`El email "${email}" ya est├í en uso por otro usuario.`);
       }
       updates.email = email;
       beforeSnapshot.email = user.email;
@@ -64,7 +64,7 @@ export const updateUser = mutation({
     // 4) Aplicar cambios
     await db.patch(userId, updates);
 
-    // 5) Auditoría
+    // 5) Auditor├¡a
     await db.insert("audits", {
       action: "update_user",
       entity: "user",

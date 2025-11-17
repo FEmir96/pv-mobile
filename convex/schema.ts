@@ -1,4 +1,4 @@
-// convex/schema.ts
+﻿// convex/schema.ts
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
@@ -83,7 +83,7 @@ export default defineSchema({
     .index("by_user_game", ["userId", "gameId"])
     .index("by_game", ["gameId"]),
 
-  // ✅ IMPORTANTE: restauramos transactions con type rental|purchase
+  // Ô£à IMPORTANTE: restauramos transactions con type rental|purchase
   transactions: defineTable({
     userId: v.id("profiles"),
     gameId: v.id("games"),
