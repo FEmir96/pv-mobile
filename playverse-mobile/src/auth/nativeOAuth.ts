@@ -4,7 +4,7 @@ import 'react-native-url-polyfill/auto';
 import * as AuthSession from 'expo-auth-session';
 import { ResponseType } from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
-import Constants from 'expo-constants';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
 import { Buffer } from 'buffer';
 import { convexHttp } from '../lib/convexClient';
@@ -20,6 +20,51 @@ type OAuthResult = {
 };
 
 const GOOGLE_AUTH_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
+const CALLBACK_PATH = 'auth/callback';
+const EXPO_AUTH_PROXY_URL = 'https://auth.expo.io';
+
+const isRunningInExpoGo = () =>
+  Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+const sanitizeOwner = (owner?: string) => {
+  if (!owner) return undefined;
+  return owner.startsWith('@') ? owner : `@${owner}`;
+};
+
+function getExpoProjectFullName() {
+  const config = (Constants.expoConfig ?? {}) as any;
+  const explicitFullName =
+    config.originalFullName ??
+    (Constants.manifest2 as any)?.extra?.expoClientFullName ??
+    process.env.EXPO_PUBLIC_EXPO_FULL_NAME ??
+    process.env.EXPO_PROJECT_FULL_NAME;
+
+  if (explicitFullName) {
+    const normalized = explicitFullName.startsWith('@')
+      ? explicitFullName
+      : `@${explicitFullName.replace(/^@/, '')}`;
+    return normalized;
+  }
+
+  const owner =
+    sanitizeOwner(config.owner ?? process.env.EXPO_PUBLIC_EXPO_OWNER ?? process.env.EXPO_PROJECT_OWNER) ??
+    '@anonymous';
+  const slug = config.slug ?? process.env.EXPO_PUBLIC_EXPO_SLUG ?? process.env.EXPO_PROJECT_SLUG;
+
+  if (owner && slug) {
+    return `${owner}/${slug}`;
+  }
+  return undefined;
+}
+
+function buildExpoProxyRedirectUri(projectFullName: string) {
+  return `${EXPO_AUTH_PROXY_URL}/${projectFullName}`;
+}
+
+function buildExpoProxyStartUrl(authUrl: string, returnUrl: string, projectFullName: string) {
+  const query = new URLSearchParams({ authUrl, returnUrl });
+  return `${buildExpoProxyRedirectUri(projectFullName)}/start?${query.toString()}`;
+}
 
 function randomNonce() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -57,12 +102,20 @@ const getParams = (r: AuthSession.AuthSessionResult) =>
 // ---------------------------------
 
 type PromptOptions = AuthSession.AuthRequestPromptOptions & { useProxy?: boolean };
-type RedirectSetup = { redirectUri: string; promptOptions: PromptOptions };
+type RedirectSetup = {
+  redirectUri: string;
+  promptOptions: PromptOptions;
+  expoProxy?: {
+    projectFullName: string;
+    startProjectFullName: string;
+    returnUri: string;
+  };
+};
 type RedirectOptions = { provider?: 'google' | 'microsoft'; clientId?: string };
 
 function resolveRedirect(opts: RedirectOptions = {}): RedirectSetup {
   const isWeb = Platform.OS === 'web';
-  const isExpoGo = Constants.appOwnership === 'expo';
+  const isExpoGo = isRunningInExpoGo();
 
   if (isWeb) {
     // Google/Azure requieren origin EXACTO
@@ -74,9 +127,25 @@ function resolveRedirect(opts: RedirectOptions = {}): RedirectSetup {
   }
 
   if (isExpoGo) {
-    const redirectUri = AuthSession.makeRedirectUri({ useProxy: true } as any);
-    console.log('[Auth] Redirect URI (expo proxy):', redirectUri);
-    return { redirectUri, promptOptions: { useProxy: true } as PromptOptions };
+    const projectFullName = getExpoProjectFullName();
+    const returnUri = AuthSession.makeRedirectUri({
+      path: CALLBACK_PATH,
+      scheme: opts.provider === 'microsoft' ? 'exp' : undefined,
+    });
+    if (projectFullName) {
+      const redirectUri = buildExpoProxyRedirectUri(projectFullName);
+      console.log('[Auth] Redirect URI (expo proxy):', redirectUri);
+      return {
+        redirectUri,
+        promptOptions: {} as PromptOptions,
+        expoProxy: { projectFullName, startProjectFullName: projectFullName, returnUri },
+      };
+    }
+
+    console.warn(
+      '[Auth] Expo proxy unavailable (missing project name). Falling back to local redirect URI.'
+    );
+    return { redirectUri: returnUri, promptOptions: {} as PromptOptions };
   }
 
   let nativeRedirect: string | undefined;
@@ -92,17 +161,36 @@ function resolveRedirect(opts: RedirectOptions = {}): RedirectSetup {
         }
       : {
           scheme: 'playverse',
-          path: 'auth/callback',
+          path: CALLBACK_PATH,
         }
   );
   console.log('[Auth] Redirect URI (native scheme):', redirectUri);
   return { redirectUri, promptOptions: {} as PromptOptions };
 }
 
+async function promptWithExpoProxy(
+  request: AuthSession.AuthRequest,
+  authUrl: string,
+  promptOptions: PromptOptions,
+  expoProxy: { projectFullName: string; startProjectFullName: string; returnUri: string }
+): Promise<AuthSession.AuthSessionResult> {
+  const startUrl = buildExpoProxyStartUrl(
+    authUrl,
+    expoProxy.returnUri,
+    expoProxy.startProjectFullName
+  );
+  console.log('[Auth] Expo proxy startUrl:', startUrl);
+  const result = await WebBrowser.openAuthSessionAsync(startUrl, expoProxy.returnUri, promptOptions);
+  if (result.type !== 'success') {
+    return { type: result.type as 'cancel' | 'dismiss' | 'locked' | 'opened' };
+  }
+  return request.parseReturnUrl(result.url);
+}
+
 export async function signInWithGoogleNative(): Promise<OAuthResult> {
   const extras = (Constants.expoConfig?.extra || {}) as any;
   const authExtra = extras?.auth?.google ?? {};
-  const isExpoGo = Constants.appOwnership === 'expo';
+  const isExpoGo = isRunningInExpoGo();
 
   const clientId = isExpoGo
     ? authExtra.expoClientId ??
@@ -113,13 +201,15 @@ export async function signInWithGoogleNative(): Promise<OAuthResult> {
     : extras.googleClientId ?? process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID;
 
   if (!clientId) return { ok: false, error: 'Missing GOOGLE_CLIENT_ID' };
-  const { redirectUri, promptOptions } = resolveRedirect({ provider: 'google', clientId });
+  const { redirectUri, promptOptions, expoProxy } = resolveRedirect({ provider: 'google', clientId });
+
+  const usingExpoProxy = !!expoProxy;
 
   const request = new AuthSession.AuthRequest({
     clientId,
     redirectUri,
-    responseType: ResponseType.Code,
-    usePKCE: true,
+    responseType: usingExpoProxy ? ResponseType.IdToken : ResponseType.Code,
+    usePKCE: usingExpoProxy ? false : true,
     scopes: ['openid', 'email', 'profile'],
     extraParams: { nonce: randomNonce() },
   });
@@ -129,10 +219,12 @@ export async function signInWithGoogleNative(): Promise<OAuthResult> {
   });
   console.log('[Auth] Google authUrl:', authUrl);
 
-  const result = await request.promptAsync(
-    { authorizationEndpoint: GOOGLE_AUTH_ENDPOINT },
-    promptOptions as AuthSession.AuthRequestPromptOptions
-  );
+  const result = expoProxy
+    ? await promptWithExpoProxy(request, authUrl, promptOptions, expoProxy)
+    : await request.promptAsync(
+        { authorizationEndpoint: GOOGLE_AUTH_ENDPOINT },
+        promptOptions as AuthSession.AuthRequestPromptOptions
+      );
   console.log('[Google] result:', result);
 
   if (result.type !== 'success') {
@@ -143,27 +235,33 @@ export async function signInWithGoogleNative(): Promise<OAuthResult> {
   }
 
   const p = getParams(result);
-  const code = (p.code as string) ?? (result as any).code;
-  if (!code) return { ok: false, error: 'Missing authorization code' };
-
   let idToken: string | undefined;
-  try {
-    const tokenResponse = await AuthSession.exchangeCodeAsync(
-      {
-        clientId,
-        code,
-        redirectUri,
-        extraParams: {
-          code_verifier: request.codeVerifier ?? '',
+
+  if (usingExpoProxy) {
+    idToken = (p.id_token as string) ?? (result as any).id_token;
+    if (!idToken) return { ok: false, error: 'Missing id_token' };
+  } else {
+    const code = (p.code as string) ?? (result as any).code;
+    if (!code) return { ok: false, error: 'Missing authorization code' };
+
+    try {
+      const tokenResponse = await AuthSession.exchangeCodeAsync(
+        {
+          clientId,
+          code,
+          redirectUri,
+          extraParams: {
+            code_verifier: request.codeVerifier ?? '',
+          },
         },
-      },
-      {
-        tokenEndpoint: 'https://oauth2.googleapis.com/token',
-      }
-    );
-    idToken = (tokenResponse as any).id_token || tokenResponse.idToken;
-  } catch (tokenError: any) {
-    return { ok: false, error: tokenError?.message || 'Token exchange failed' };
+        {
+          tokenEndpoint: 'https://oauth2.googleapis.com/token',
+        }
+      );
+      idToken = (tokenResponse as any).id_token || tokenResponse.idToken;
+    } catch (tokenError: any) {
+      return { ok: false, error: tokenError?.message || 'Token exchange failed' };
+    }
   }
 
   if (!idToken) return { ok: false, error: 'Missing id_token' };
@@ -192,8 +290,8 @@ export async function signInWithGoogleNative(): Promise<OAuthResult> {
 export async function signInWithMicrosoftNative(): Promise<OAuthResult> {
   const extras = (Constants.expoConfig?.extra || {}) as any;
   const authExtra = extras?.auth?.microsoft ?? {};
-  const { redirectUri, promptOptions } = resolveRedirect();
-  const isExpoGo = Constants.appOwnership === 'expo';
+  const { redirectUri, promptOptions, expoProxy } = resolveRedirect({ provider: 'microsoft' });
+  const isExpoGo = isRunningInExpoGo();
 
   const clientId = isExpoGo
     ? authExtra.expoClientId ??
@@ -212,15 +310,17 @@ export async function signInWithMicrosoftNative(): Promise<OAuthResult> {
   if (!clientId) return { ok: false, error: 'Missing MICROSOFT_CLIENT_ID' };
 
   const authEndpoint = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize`;
+  const tokenEndpoint = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`;
+  const usingExpoProxy = !!expoProxy;
 
   const request = new AuthSession.AuthRequest({
     clientId,
     redirectUri,
-    responseType: 'id_token',
-    usePKCE: false,
+    responseType: usingExpoProxy ? ResponseType.IdToken : ResponseType.Code,
+    usePKCE: usingExpoProxy ? false : true,
     scopes: ['openid', 'profile', 'email'],
     extraParams: {
-      response_mode: 'fragment',
+      response_mode: usingExpoProxy ? 'fragment' : 'query',
       nonce: randomNonce(),
     },
   });
@@ -228,10 +328,12 @@ export async function signInWithMicrosoftNative(): Promise<OAuthResult> {
   const authUrl = await request.makeAuthUrlAsync({ authorizationEndpoint: authEndpoint });
   console.log('[Auth] Microsoft authUrl:', authUrl);
 
-  const result = await request.promptAsync(
-    { authorizationEndpoint: authEndpoint },
-    promptOptions as AuthSession.AuthRequestPromptOptions
-  );
+  const result = expoProxy
+    ? await promptWithExpoProxy(request, authUrl, promptOptions, expoProxy)
+    : await request.promptAsync(
+        { authorizationEndpoint: authEndpoint },
+        promptOptions as AuthSession.AuthRequestPromptOptions
+      );
   console.log('[MS] result:', result);
 
   if (result.type !== 'success') {
@@ -246,7 +348,33 @@ export async function signInWithMicrosoftNative(): Promise<OAuthResult> {
     return { ok: false, error: `${p.error}: ${decodeURIComponent(p.error_description || '')}` };
   }
 
-  const idToken = p.id_token as string | undefined;
+  let idToken: string | undefined;
+  if (usingExpoProxy) {
+    idToken = p.id_token as string | undefined;
+  } else {
+    const code = (p.code as string) ?? (result as any).code;
+    if (!code) return { ok: false, error: 'Missing authorization code' };
+
+    try {
+      const tokenResponse = await AuthSession.exchangeCodeAsync(
+        {
+          clientId,
+          code,
+          redirectUri,
+          extraParams: {
+            code_verifier: request.codeVerifier ?? '',
+          },
+        },
+        {
+          tokenEndpoint,
+        }
+      );
+      idToken = (tokenResponse as any).id_token || tokenResponse.idToken;
+    } catch (tokenError: any) {
+      return { ok: false, error: tokenError?.message || 'Token exchange failed' };
+    }
+  }
+
   if (!idToken) return { ok: false, error: 'Missing id_token' };
 
   const payload = b64UrlJson<any>(idToken.split('.')[1]);

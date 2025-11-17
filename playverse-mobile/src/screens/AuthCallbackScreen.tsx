@@ -1,6 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { useNavigation, type NavigationProp } from '@react-navigation/native';
+import {
+  useNavigation,
+  type NavigationProp,
+  useRoute,
+  type RouteProp,
+} from '@react-navigation/native';
 import * as Linking from 'expo-linking';
 
 import { colors, spacing, typography } from '../styles/theme';
@@ -8,31 +13,29 @@ import { convexHttp } from '../lib/convexClient';
 import { useAuth } from '../context/AuthContext';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 
+type AuthCallbackRoute = RouteProp<RootStackParamList, 'AuthCallback'>;
+type AuthCallbackParams = Record<string, string | undefined>;
+
 export default function AuthCallbackScreen() {
   const nav = useNavigation<NavigationProp<RootStackParamList>>();
+  const route = useRoute<AuthCallbackRoute>();
   const { setFromProfile } = useAuth();
-  const [message, setMessage] = useState('Procesando autenticación...');
+  const [message, setMessage] = useState('Procesando autenticacion...');
   const handledRef = useRef(false);
 
-  useEffect(() => {
-    const handleUrl = async (url?: string | null) => {
+  const processQueryParams = useCallback(
+    async (params: AuthCallbackParams) => {
       if (handledRef.current) return;
-      const current = url ?? (await Linking.getInitialURL()) ?? '';
-      if (!current) {
-        setMessage('No se recibió URL de autenticación.');
-        return;
-      }
       handledRef.current = true;
 
       try {
-        const { queryParams } = Linking.parse(current);
-        const email = String(queryParams?.email || '').toLowerCase();
-        const name = String(queryParams?.name || '');
-        const avatar = String(queryParams?.avatar || '');
-        const provider = String(queryParams?.provider || 'web');
+        const email = String(params?.email || '').toLowerCase();
+        const name = String(params?.name || '');
+        const avatar = String(params?.avatar || '');
+        const provider = String(params?.provider || 'web');
 
         if (!email) {
-          // En flujos nativos con id_token no esperamos query params aquí.
+          // Para flows nativos solo avisamos y volvemos a la app principal.
           setMessage('Callback sin email (flujo nativo); redirigiendo...');
           nav.navigate('Tabs');
           return;
@@ -63,26 +66,50 @@ export default function AuthCallbackScreen() {
           role: prof.role,
           createdAt: prof.createdAt,
         });
-        setMessage('¡Autenticado! Redirigiendo...');
+        setMessage('Autenticado, redirigiendo...');
         nav.navigate('Tabs');
       } catch {
-        setMessage('Error durante la autenticación');
+        setMessage('Error durante la autenticacion');
       }
-    };
+    },
+    [nav, setFromProfile]
+  );
 
-    // 1) initialURL si la app se abrió por el deep link
-    handleUrl(null);
+  const handleUrl = useCallback(
+    async (url?: string | null) => {
+      if (handledRef.current) return;
+      const current = url ?? (await Linking.getInitialURL()) ?? '';
+      if (!current) {
+        setMessage('No se recibio URL de autenticacion.');
+        return;
+      }
 
-    // 2) eventos posteriores si la app ya estaba abierta
+      const { queryParams } = Linking.parse(current);
+      await processQueryParams((queryParams ?? {}) as AuthCallbackParams);
+    },
+    [processQueryParams]
+  );
+
+  useEffect(() => {
+    let skippedInitialHandle = false;
+    if (!handledRef.current && route?.params && Object.keys(route.params).length > 0) {
+      skippedInitialHandle = true;
+      processQueryParams(route.params);
+    }
+
+    if (!skippedInitialHandle) {
+      handleUrl(null);
+    }
+
     const sub = Linking.addEventListener('url', (evt: { url: string }) => {
       handleUrl(evt?.url);
     });
     return () => {
-      // RN/Expo proveen .remove en la subscripción
+      // RN/Expo proveen .remove en la subscripcion
       // @ts-ignore: compat layer
       sub.remove?.();
     };
-  }, [nav, setFromProfile]);
+  }, [handleUrl, processQueryParams, route?.params]);
 
   return (
     <View style={styles.container}>
