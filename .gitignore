@@ -56,3 +56,8 @@ ios/
 
 # typescript
 *.next-env.d.ts
+
+# === CONVEX AUTO-GENERATED ===
+convex/_generated/
+*.zip
+scripts/cloneConvexDevToProd.js

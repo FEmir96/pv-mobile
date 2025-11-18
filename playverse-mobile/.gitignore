@@ -81,3 +81,8 @@ yarn-error.*
 *.tsbuildinfo
 
 # @end expo-cli
+
+# === CONVEX AUTO-GENERATED ===
+convex/_generated/
+*.zip
+scripts/cloneConvexDevToProd.js
