@@ -10,7 +10,7 @@ export default {
   expo: {
     name: "PlayVerse Mobile",
     slug: "playverse-mobile",
-    owner: "fernandoemir",
+    owner: "playverse",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/icon.png",
@@ -120,7 +120,7 @@ export default {
         },
       },
       eas: {
-        projectId: "4dae069c-2e28-4075-a5be-4dea3c345351",
+        projectId: "89ef6e6c-c4f3-463e-a3e5-a523ad6fc144",
       },
       // Para inspección en runtime si hace falta:
       useNative: USE_NATIVE,
