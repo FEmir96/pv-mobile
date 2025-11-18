@@ -534,7 +534,7 @@ export default function GameDetailScreen() {
     }
   };
 
-  const SHARE_URL_BASE = 'https://playverse.com/juego';
+  const SHARE_URL_BASE = 'https://pv-web-ten.vercel.app/juego';
 
   const onShare = async () => {
     try {
@@ -542,7 +542,7 @@ export default function GameDetailScreen() {
       const gid = (computedId ?? '').trim();
       const url = gid
         ? `${SHARE_URL_BASE}/${encodeURIComponent(gid)}`
-        : 'https://playverse.com';
+        : 'https://pv-web-ten.vercel.app';
 
       // iOS: solo 'url'. Android: solo 'message'.
       const payload =
