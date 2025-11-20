@@ -64,6 +64,11 @@ export default {
                     scheme: GOOGLE_ANDROID_SCHEME,
                     host: "oauthredirect",
                   },
+                  {
+                    scheme: GOOGLE_ANDROID_SCHEME,
+                    host: "oauth2redirect",
+                    pathPrefix: "/google",
+                  },
                 ],
               },
             ]

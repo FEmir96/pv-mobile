@@ -33,11 +33,11 @@
         "EXPO_PUBLIC_MICROSOFT_CLIENT_ID": "d58b5185-cfc8-4305-ab7e-b7105a9ba30a",
         "EXPO_PUBLIC_MICROSOFT_EXPO_CLIENT_ID": "d58b5185-cfc8-4305-ab7e-b7105a9ba30a",
         "EXPO_PUBLIC_MICROSOFT_TENANT_ID": "common",
-        "EXPO_PUBLIC_WEB_ASSET_BASE": "http://localhost:3000",
+        "EXPO_PUBLIC_WEB_ASSET_BASE": "https://pv-web-ten.vercel.app",
         "CONVEX_URL": "https://utmost-crocodile-673.convex.cloud",
         "CONVEX_DEPLOYMENT": "prod:utmost-crocodile-673",
-        "NEXTAUTH_URL": "http://192.168.1.165:3000",
-        "AUTH_URL": "http://192.168.1.165:3000",
+        "NEXTAUTH_URL": "https://pv-web-ten.vercel.app",
+        "AUTH_URL": "https://pv-web-ten.vercel.app",
         "AUTH_TRUST_HOST": "true"
       },
       "android": {

@@ -190,18 +190,42 @@ async function promptWithExpoProxy(
 export async function signInWithGoogleNative(): Promise<OAuthResult> {
   const extras = (Constants.expoConfig?.extra || {}) as any;
   const authExtra = extras?.auth?.google ?? {};
+  const forceProxy = true;
   const isExpoGo = isRunningInExpoGo();
 
-  const clientId = isExpoGo
-    ? authExtra.expoClientId ??
-      extras.googleExpoClientId ??
-      process.env.EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID ??
-      extras.googleClientId ??
-      process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID
+  // Forzamos proxy de Expo para evitar depender del esquema nativo en navegadores que no disparan el intent
+  const expoClientId =
+    authExtra.expoClientId ??
+    extras.googleExpoClientId ??
+    process.env.EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID;
+
+  const clientId = forceProxy
+    ? expoClientId
+    : isExpoGo
+    ? expoClientId ?? extras.googleClientId ?? process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID
     : extras.googleClientId ?? process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID;
 
   if (!clientId) return { ok: false, error: 'Missing GOOGLE_CLIENT_ID' };
-  const { redirectUri, promptOptions, expoProxy } = resolveRedirect({ provider: 'google', clientId });
+
+  const projectFullName = getExpoProjectFullName();
+  const returnUri = AuthSession.makeRedirectUri({
+    path: CALLBACK_PATH,
+    scheme: 'playverse',
+  });
+
+  const redirectSetup = forceProxy && projectFullName
+    ? {
+        redirectUri: buildExpoProxyRedirectUri(projectFullName),
+        promptOptions: {} as AuthSession.AuthRequestPromptOptions,
+        expoProxy: {
+          projectFullName,
+          startProjectFullName: projectFullName,
+          returnUri,
+        },
+      }
+    : resolveRedirect({ provider: 'google', clientId });
+
+  const { redirectUri, promptOptions, expoProxy } = redirectSetup;
 
   const usingExpoProxy = !!expoProxy;
 
