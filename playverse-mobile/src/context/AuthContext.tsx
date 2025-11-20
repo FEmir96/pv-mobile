@@ -21,6 +21,7 @@ type AuthContextType = {
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 días
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | undefined>(undefined);
@@ -32,8 +33,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function persist(p?: Profile) {
     try {
       const SecureStore = require('expo-secure-store');
-      if (p) await SecureStore.setItemAsync(STORAGE_KEY, JSON.stringify(p));
-      else await SecureStore.deleteItemAsync(STORAGE_KEY);
+      if (p) {
+        const payload = { profile: p, expiresAt: Date.now() + SESSION_TTL_MS };
+        await SecureStore.setItemAsync(STORAGE_KEY, JSON.stringify(payload));
+      } else {
+        await SecureStore.deleteItemAsync(STORAGE_KEY);
+      }
     } catch {}
   }
 
@@ -42,7 +47,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const SecureStore = require('expo-secure-store');
         const raw = await SecureStore.getItemAsync(STORAGE_KEY);
-        if (raw) setProfile(JSON.parse(raw));
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.expiresAt && parsed.expiresAt > Date.now() && parsed.profile) {
+            setProfile(parsed.profile);
+          } else {
+            await SecureStore.deleteItemAsync(STORAGE_KEY);
+          }
+        }
       } catch {}
     })();
   }, []);

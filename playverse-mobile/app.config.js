@@ -32,6 +32,8 @@ export default {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#ffffff",
       },
+      // Incluye la config FCM descargada de Firebase
+      googleServicesFile: "./google-services.json",
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
       package: "com.playverse.app",
@@ -81,19 +83,20 @@ export default {
       favicon: "./assets/favicon.png",
     },
 
-    // ✅ Plugins solo si EXPO_USE_NATIVE=1 (Dev Client / Production / Preview)
+    // ? Plugins solo si EXPO_USE_NATIVE=1 (Dev Client / Production / Preview)
     plugins: USE_NATIVE
       ? [
           "expo-web-browser",
-          "expo-notifications",
-          // tu plugin custom si lo usás:
-          "./plugins/withPushy",
+          [
+            "expo-notifications",
+            {
+              // icon: "./assets/notification-icon.png",
+            },
+          ],
           [
             "expo-build-properties",
             {
-              android: {
-                extraMavenRepos: ["https://repo.pushy.me"],
-              },
+              android: {},
             },
           ],
         ]
@@ -132,3 +135,6 @@ export default {
     },
   },
 };
+
+
+

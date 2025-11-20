@@ -18,6 +18,7 @@ import type * as actions_debugSearchIgdb from "../actions/debugSearchIgdb.js";
 import type * as actions_devPlanRemindersNow from "../actions/devPlanRemindersNow.js";
 import type * as actions_devSweepNow from "../actions/devSweepNow.js";
 import type * as actions_email from "../actions/email.js";
+import type * as actions_expoPush from "../actions/expoPush.js";
 import type * as actions_fillUpcomingCoversFromIGDB from "../actions/fillUpcomingCoversFromIGDB.js";
 import type * as actions_getIGDBScreenshots from "../actions/getIGDBScreenshots.js";
 import type * as actions_massBackfillAgeRatings from "../actions/massBackfillAgeRatings.js";
@@ -128,6 +129,7 @@ import type * as queries_listGamesWithoutCover from "../queries/listGamesWithout
 import type * as queries_listGamesWithoutDetails from "../queries/listGamesWithoutDetails.js";
 import type * as queries_listGamesWithoutTrailer from "../queries/listGamesWithoutTrailer.js";
 import type * as queries_passwordReset from "../queries/passwordReset.js";
+import type * as queries_pushTargets from "../queries/pushTargets.js";
 import type * as queries_scores_getMyBestByGame from "../queries/scores/getMyBestByGame.js";
 import type * as queries_scores_topByGame from "../queries/scores/topByGame.js";
 import type * as queries_searchGames from "../queries/searchGames.js";
@@ -150,6 +152,7 @@ declare const fullApi: ApiFromModules<{
   "actions/devPlanRemindersNow": typeof actions_devPlanRemindersNow;
   "actions/devSweepNow": typeof actions_devSweepNow;
   "actions/email": typeof actions_email;
+  "actions/expoPush": typeof actions_expoPush;
   "actions/fillUpcomingCoversFromIGDB": typeof actions_fillUpcomingCoversFromIGDB;
   "actions/getIGDBScreenshots": typeof actions_getIGDBScreenshots;
   "actions/massBackfillAgeRatings": typeof actions_massBackfillAgeRatings;
@@ -260,6 +263,7 @@ declare const fullApi: ApiFromModules<{
   "queries/listGamesWithoutDetails": typeof queries_listGamesWithoutDetails;
   "queries/listGamesWithoutTrailer": typeof queries_listGamesWithoutTrailer;
   "queries/passwordReset": typeof queries_passwordReset;
+  "queries/pushTargets": typeof queries_pushTargets;
   "queries/scores/getMyBestByGame": typeof queries_scores_getMyBestByGame;
   "queries/scores/topByGame": typeof queries_scores_topByGame;
   "queries/searchGames": typeof queries_searchGames;

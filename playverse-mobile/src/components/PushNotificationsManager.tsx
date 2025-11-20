@@ -6,7 +6,7 @@ import { emitRefresh } from '../lib/notificationsBus';
 import {
   registerPushToken,
   unregisterStoredPushToken,
-  setupPushyListeners,
+  setupNotificationListeners,
 } from '../lib/pushNotifications';
 
 export default function PushNotificationsManager(): React.ReactElement | null {
@@ -16,7 +16,7 @@ export default function PushNotificationsManager(): React.ReactElement | null {
   useEffect(() => {
     if (Platform.OS === 'web') return;
 
-    setupPushyListeners({
+    setupNotificationListeners({
       onReceive: () => {
         // Forzá refresco de notificaciones/badges
         emitRefresh();
@@ -48,3 +48,5 @@ export default function PushNotificationsManager(): React.ReactElement | null {
 
   return null;
 }
+
+
