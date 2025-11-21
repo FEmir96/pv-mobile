@@ -101,6 +101,7 @@ import type * as queries_admin_listProfiles from "../queries/admin/listProfiles.
 import type * as queries_canPlayGame from "../queries/canPlayGame.js";
 import type * as queries_cart from "../queries/cart.js";
 import type * as queries_countFavorites from "../queries/countFavorites.js";
+import type * as queries_games_canPlayGame from "../queries/games/canPlayGame.js";
 import type * as queries_games_getIdByEmbedUrl from "../queries/games/getIdByEmbedUrl.js";
 import type * as queries_getAdmins from "../queries/getAdmins.js";
 import type * as queries_getAllUsers from "../queries/getAllUsers.js";
@@ -235,6 +236,7 @@ declare const fullApi: ApiFromModules<{
   "queries/canPlayGame": typeof queries_canPlayGame;
   "queries/cart": typeof queries_cart;
   "queries/countFavorites": typeof queries_countFavorites;
+  "queries/games/canPlayGame": typeof queries_games_canPlayGame;
   "queries/games/getIdByEmbedUrl": typeof queries_games_getIdByEmbedUrl;
   "queries/getAdmins": typeof queries_getAdmins;
   "queries/getAllUsers": typeof queries_getAllUsers;
