@@ -29,6 +29,8 @@ out/
 .expo-shared/
 android/
 ios/
+google-services.json
+playverse-mobile/google-services.json
 *.jks
 *.p8
 *.p12
@@ -61,3 +63,6 @@ ios/
 convex/_generated/
 *.zip
 scripts/cloneConvexDevToProd.js
+
+# === MONOREPO RUIDO (ocultar web dentro de pv-mobile) ===
+playverse-web/
