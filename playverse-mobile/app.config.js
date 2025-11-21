@@ -32,8 +32,9 @@ export default {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#ffffff",
       },
-      // Incluye la config FCM descargada de Firebase
-      googleServicesFile: "./google-services.json",
+      // Incluye la config FCM descargada de Firebase (variable de entorno tipo File en EAS, con fallback local)
+      googleServicesFile:
+        process.env.GOOGLE_SERVICES_JSON || "./google-services.json",
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
       package: "com.playverse.app",

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "819047426310",
+    "project_id": "playverse-30adf",
+    "storage_bucket": "playverse-30adf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:819047426310:android:861e6d3673f92a1ea3d687",
+        "android_client_info": {
+          "package_name": "com.playverse.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyABM5TyL5hmZww7gjhG7M9bGUeHBgbV0rc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
