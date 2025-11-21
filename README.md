@@ -6,6 +6,11 @@ App movil de PlayVerse (Expo + React Native) para explorar catalogo, ver fichas,
 - `playverse-mobile/`: fuente principal de la app (Expo).
 - `convex/`: funciones, queries y acciones compartidas (Convex Cloud). No es obligatorio levantarlo local si apuntas al deployment remoto.
 
+## 🛠️ Prerrequisitos
+- Node.js 18+ y npm.
+- Expo CLI (instalada via `npm i -g expo`) o usar `npx expo` directamente.
+- Android SDK para correr en emulador/dispositivo; Xcode si vas a probar iOS nativo.
+
 ## 🔑 Variables de entorno (ponlas en `playverse-mobile/.env.local`)
 Necesarias para que arranque autenticacion y datos:
 - `EXPO_PUBLIC_CONVEX_URL` (o `CONVEX_URL`): URL de tu deployment Convex.
@@ -28,6 +33,7 @@ EXPO_PUBLIC_MICROSOFT_TENANT_ID=common
 EXPO_PUBLIC_WEB_ASSET_BASE=http://localhost:3000
 GOOGLE_SERVICES_JSON=./google-services.json
 ```
+- Los valores reales (client IDs, secretos, keys) van en tu `.env.local` privado; no se suben al repo. Usa los que ya tengan el equipo o Vault interno.
 
 ## 🚀 Como levantarlo local
 1) `cd playverse-mobile`
@@ -59,6 +65,7 @@ GOOGLE_SERVICES_JSON=./google-services.json
 - Push notifications: Expo Notifications + FCM (Android). Los tokens se guardan en Convex (`pushTokens.ts`) y se envian via acciones/cron en `convex/notifications.ts`.
 - Deep linking: esquema `playverse://auth/callback` configurado en `app.config.js` (tambien soporta esquemas de Google para OAuth nativo).
 - Assets web: si usas `EXPO_PUBLIC_WEB_ASSET_BASE`, la app servira assets desde esa base en web preview.
+- Estado esperado al levantar local: la home muestra el catalogo obtenido desde Convex remoto; login social funciona solo si las claves OAuth y `google-services.json` estan configurados. Sin credenciales, la app arranca pero las acciones protegidas fallaran.
 
 ## 🌟 Dependencias principales
 - Expo 54 + React Native 0.81.
