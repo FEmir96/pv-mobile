@@ -14,9 +14,14 @@ export const send = action({
     androidColor: v.optional(v.string()),
   },
   handler: async (ctx, { tokens, title, body, data, androidColor }) => {
-    if (!tokens.length) return { ok: true, sent: 0 };
+    const cleanTokens = tokens
+      .map((t) => (t || "").trim())
+      .filter((t) => t.length > 0);
+    if (!cleanTokens.length) {
+      return { ok: false, reason: "no_valid_tokens" as const };
+    }
 
-    const messages = tokens.map((to) => ({
+    const messages = cleanTokens.map((to) => ({
       to,
       title,
       body,
@@ -25,16 +30,22 @@ export const send = action({
       android: androidColor ? { color: androidColor } : undefined,
     }));
 
+    // Expo push API espera un array de mensajes en el cuerpo (no envuelve en { messages }).
     const res = await fetch(EXPO_API, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-      body: JSON.stringify({ messages }),
+      body: JSON.stringify(messages),
     });
 
     const json = await res.json();
+
+    if (!res.ok) {
+      console.error("expoPush error", res.status, json);
+    }
+
     return { ok: res.ok, status: res.status, json };
   },
 });

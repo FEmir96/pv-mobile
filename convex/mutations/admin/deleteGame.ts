@@ -48,29 +48,33 @@ export const deleteGame = mutation({
         });
       }
 
-      const ids = new Set(usersToNotify.map((u) => u._id));
-      const tokens = (await db.query("pushTokens").collect()).filter(
-        (t) => !t.disabledAt && t.profileId && ids.has(t.profileId)
-      );
+      try {
+        const ids = new Set(usersToNotify.map((u) => u._id));
+        const tokens = (await db.query("pushTokens").collect()).filter(
+          (t) => !t.disabledAt && t.profileId && ids.has(t.profileId)
+        );
 
-      if (scheduler && tokens.length) {
-        const expoPushAction = (api as any).actions?.expoPush?.send;
-        if (expoPushAction) {
-          scheduler
-            .runAfter(0, expoPushAction, {
-              tokens: tokens.map((t) => t.token),
-              title: titleMsg,
-              body: message,
-              data: {
-                type: "game-removed",
-                gameId: String(id),
-                coverUrl: (before as any)?.cover_url ?? null,
-                plan: planFinal,
-              },
-              androidColor: "#ff6600",
-            })
-            .catch((err: unknown) => console.error(err));
+        if (scheduler && tokens.length) {
+          const expoPushAction = (api as any).actions?.expoPush?.send;
+          if (expoPushAction) {
+            scheduler
+              .runAfter(0, expoPushAction, {
+                tokens: tokens.map((t) => t.token),
+                title: titleMsg,
+                body: message,
+                data: {
+                  type: "game-removed",
+                  gameId: String(id),
+                  coverUrl: (before as any)?.cover_url ?? null,
+                  plan: planFinal,
+                },
+                androidColor: "#ff6600",
+              })
+              .catch((err: unknown) => console.error(err));
+          }
         }
+      } catch (err) {
+        console.error("deleteGame push scheduling error", err);
       }
     }
 

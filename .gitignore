@@ -61,3 +61,7 @@ ios/
 convex/_generated/
 *.zip
 scripts/cloneConvexDevToProd.js
+
+# === GOOGLE SERVICES (ANDROID) ===
+google-services.json
+playverse-mobile/google-services.json

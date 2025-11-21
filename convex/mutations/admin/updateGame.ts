@@ -127,10 +127,15 @@ export const updateGame = mutation({
       .collect();
 
     // Tokens push de roles implicados
-    const ids = new Set(usersToNotify.map((u) => u._id));
-    const tokensForRoles = (await db.query("pushTokens").collect()).filter(
-      (t) => !t.disabledAt && t.profileId && ids.has(t.profileId)
-    );
+    let tokensForRoles: any[] = [];
+    try {
+      const ids = new Set(usersToNotify.map((u) => u._id));
+      tokensForRoles = (await db.query("pushTokens").collect()).filter(
+        (t) => !t.disabledAt && t.profileId && ids.has(t.profileId)
+      );
+    } catch (err) {
+      console.error("updateGame load tokens error", err);
+    }
 
     // Detectamos altas/bajas para decidir si disparamos push Expo
     const isNew = !before && !!after;
@@ -219,27 +224,31 @@ export const updateGame = mutation({
     }
 
     // Push general a roles objetivo
-    if (scheduler && tokensForRoles.length) {
-      const titleBase = (after as any)?.title ?? (before as any)?.title ?? "Catálogo";
-      const data = {
-        type: isNew ? "game-added" : "game-removed",
-        gameId: String(args.gameId),
-        coverUrl: (after as any)?.cover_url ?? (before as any)?.cover_url ?? null,
-        fields: changes.map((c) => c.field),
-        plan: planFinal,
-      };
-      const payload = {
-        tokens: tokensForRoles.map((t: any) => t.token),
-        title: isNew ? `Nuevo juego: ${titleBase}` : `Juego retirado: ${titleBase}`,
-        body: isNew
-          ? `Disponible ahora en PlayVerse`
-          : `Ya no está en el catálogo`,
-        data,
-        androidColor: "#ff6600", // naranja PlayVerse
-      };
-      const expoPushAction = (api as any).actions?.expoPush?.send;
-      if (expoPushAction) {
-        scheduler.runAfter(0, expoPushAction, payload).catch((err: unknown) => console.error(err));
+    if (sendPush && scheduler && tokensForRoles.length) {
+      try {
+        const titleBase = (after as any)?.title ?? (before as any)?.title ?? "Catálogo";
+        const data = {
+          type: isNew ? "game-added" : "game-removed",
+          gameId: String(args.gameId),
+          coverUrl: (after as any)?.cover_url ?? (before as any)?.cover_url ?? null,
+          fields: changes.map((c) => c.field),
+          plan: planFinal,
+        };
+        const payload = {
+          tokens: tokensForRoles.map((t: any) => t.token),
+          title: isNew ? `Nuevo juego: ${titleBase}` : `Juego retirado: ${titleBase}`,
+          body: isNew ? `Disponible ahora en PlayVerse` : `Ya no está en el catálogo`,
+          data,
+          androidColor: "#ff6600", // naranja PlayVerse
+        };
+        const expoPushAction = (api as any).actions?.expoPush?.send;
+        if (expoPushAction) {
+          scheduler
+            .runAfter(0, expoPushAction, payload)
+            .catch((err: unknown) => console.error(err));
+        }
+      } catch (err) {
+        console.error("updateGame push scheduling (roles) error", err);
       }
     }
 

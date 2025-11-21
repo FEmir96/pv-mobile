@@ -35,64 +35,75 @@ export const createGame = mutation({
   handler: async ({ db, scheduler }, args) => {
     const res = await createGameCore(db, args);
 
-    const gameId = (res as any)?.gameId ?? res ?? null;
-    const game = gameId ? await db.get(gameId as Id<"games">) : null;
-    if (!game) return res;
+    try {
+      const gameId =
+        (res as any)?.gameId ??
+        (res as any)?.id ??
+        (typeof res === "string" ? res : null);
+      const game = gameId ? await db.get(gameId as Id<"games">) : null;
+      if (!game) return res;
 
-    const planFinal = (game as any)?.plan ?? "free";
-    const roleTargets =
-      planFinal === "premium" ? ["premium", "admin"] : ["free", "premium", "admin"];
+      const planFinal = (game as any)?.plan ?? "free";
+      const roleTargets =
+        planFinal === "premium" ? ["premium", "admin"] : ["free", "premium", "admin"];
 
-    const usersToNotify = await db
-      .query("profiles")
-      .filter((q) => q.or(...roleTargets.map((role) => q.eq(q.field("role"), role))))
-      .collect();
+      const usersToNotify = await db
+        .query("profiles")
+        .filter((q) => q.or(...roleTargets.map((role) => q.eq(q.field("role"), role))))
+        .collect();
 
-    const now = Date.now();
-    const titleMsg = `Nuevo juego: ${game.title}`;
-    const message = `Disponible ahora en PlayVerse`;
+      const now = Date.now();
+      const titleMsg = `Nuevo juego: ${game.title}`;
+      const message = `Disponible ahora en PlayVerse`;
 
-    for (const user of usersToNotify) {
-      await db.insert("notifications", {
-        userId: user._id,
-        type: "new-game",
-        title: titleMsg,
-        message,
-        gameId: gameId as Id<"games">,
-        transactionId: undefined,
-        isRead: false,
-        readAt: undefined,
-        createdAt: now,
-        meta: {
-          plan: planFinal,
-          createdBy: args.requesterId ?? null,
-        },
-      });
-    }
-
-    const ids = new Set(usersToNotify.map((u) => u._id));
-    const tokens = (await db.query("pushTokens").collect()).filter(
-      (t) => !t.disabledAt && t.profileId && ids.has(t.profileId)
-    );
-
-    if (scheduler && tokens.length) {
-      const expoPushAction = (api as any).actions?.expoPush?.send;
-      if (expoPushAction) {
-        scheduler
-          .runAfter(0, expoPushAction, {
-            tokens: tokens.map((t) => t.token),
-            title: titleMsg,
-            body: message,
-            data: {
-              type: "game-added",
-              gameId: String(gameId),
-              coverUrl: (game as any)?.cover_url ?? null,
-              plan: planFinal,
-            },
-            androidColor: "#ff6600",
-          })
-          .catch((err: unknown) => console.error(err));
+      for (const user of usersToNotify) {
+        await db.insert("notifications", {
+          userId: user._id,
+          type: "new-game",
+          title: titleMsg,
+          message,
+          gameId: gameId as Id<"games">,
+          transactionId: undefined,
+          isRead: false,
+          readAt: undefined,
+          createdAt: now,
+          meta: {
+            plan: planFinal,
+            createdBy: args.requesterId ?? null,
+          },
+        });
       }
+
+      try {
+        const ids = new Set(usersToNotify.map((u) => u._id));
+        const tokens = (await db.query("pushTokens").collect()).filter(
+          (t) => !t.disabledAt && t.profileId && ids.has(t.profileId)
+        );
+
+        if (scheduler && tokens.length) {
+          const expoPushAction = (api as any).actions?.expoPush?.send;
+          if (expoPushAction) {
+            scheduler
+              .runAfter(0, expoPushAction, {
+                tokens: tokens.map((t) => t.token),
+                title: titleMsg,
+                body: message,
+                data: {
+                  type: "game-added",
+                  gameId: String(gameId),
+                  coverUrl: (game as any)?.cover_url ?? null,
+                  plan: planFinal,
+                },
+                androidColor: "#ff6600",
+              })
+              .catch((err: unknown) => console.error(err));
+          }
+        }
+      } catch (err) {
+        console.error("createGame push scheduling error", err);
+      }
+    } catch (err) {
+      console.error("createGame notification error", err);
     }
 
     return res;
