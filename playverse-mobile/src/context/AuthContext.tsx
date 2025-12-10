@@ -8,6 +8,7 @@ export type Profile = {
   email: string;
   role: 'free' | 'premium' | 'admin';
   createdAt: number;
+  status?: 'Activo' | 'Baneado';
 };
 
 type AuthContextType = {

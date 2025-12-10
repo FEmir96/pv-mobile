@@ -59,17 +59,24 @@ export default function AuthCallbackScreen() {
           return;
         }
 
+        const status = (prof as any)?.status ?? 'Activo';
+        if (status === 'Baneado') {
+          setMessage('Tu cuenta fue baneada. Contacta a un administrador.');
+          return;
+        }
+
         setFromProfile({
           _id: String(prof._id),
           name: prof.name || '',
           email: prof.email,
           role: prof.role,
           createdAt: prof.createdAt,
+          status,
         });
         setMessage('Autenticado, redirigiendo...');
         nav.navigate('Tabs');
-      } catch {
-        setMessage('Error durante la autenticacion');
+      } catch (err: any) {
+        setMessage(err?.message || 'Error durante la autenticacion');
       }
     },
     [nav, setFromProfile]

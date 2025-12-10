@@ -1,7 +1,10 @@
-// convex/mutations/authLogin.ts
+﻿// convex/mutations/authLogin.ts
 import { mutation } from "../_generated/server";
 import { v } from "convex/values";
 import bcrypt from "bcryptjs";
+
+const DEFAULT_STATUS = "Activo";
+const BANNED_STATUS = "Baneado";
 
 export const authLogin = mutation({
   args: {
@@ -9,7 +12,6 @@ export const authLogin = mutation({
     password: v.string(),
   },
   handler: async ({ db }, { email, password }) => {
-    // normalizar email (opcional pero recomendable)
     const normalizedEmail = email.trim().toLowerCase();
 
     const user = await db
@@ -21,27 +23,29 @@ export const authLogin = mutation({
       return { ok: false, error: "Usuario no encontrado" } as const;
     }
 
-    // 👇 Si el usuario no tiene passwordHash (era viejo o no migrado), devolvemos error claro
+    const status = (user as any).status ?? DEFAULT_STATUS;
+    if (status === BANNED_STATUS) {
+      return { ok: false, error: "Tu cuenta fue baneada. Contacta a un administrador." } as const;
+    }
+
     if (!user.passwordHash) {
       return {
         ok: false,
         error:
-          "La cuenta no tiene contraseña configurada. Prueba a ingresar con google/xbox o reseteá tu contraseña.",
+          "La cuenta no tiene contrasena configurada. Prueba a ingresar con google/xbox o resetea tu contrasena.",
       } as const;
     }
 
-    // En este punto TS ya sabe que passwordHash es string
     const match = await bcrypt.compare(password, user.passwordHash);
 
     if (!match) {
-      return { ok: false, error: "Credenciales inválidas" } as const;
+      return { ok: false, error: "Credenciales invalidas" } as const;
     }
 
-    // devolver perfil "seguro"
     const { _id, name, role, createdAt } = user;
     return {
       ok: true,
-      profile: { _id, name, email: user.email, role, createdAt },
+      profile: { _id, name, email: user.email, role, status, createdAt },
     } as const;
   },
 });

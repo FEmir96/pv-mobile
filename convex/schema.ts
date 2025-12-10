@@ -24,7 +24,7 @@ export default defineSchema({
     premiumExpiresAt: v.optional(v.number()),
     premiumAutoRenew: v.optional(v.boolean()),
     freeTrialUsed: v.optional(v.boolean()),
-    status: v.optional(v.string()),
+    status: v.optional(v.union(v.literal("Activo"), v.literal("Baneado"))),
   }).index("by_email", ["email"]),
 
   games: defineTable({

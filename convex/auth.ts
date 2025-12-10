@@ -6,6 +6,10 @@ import { sha256Hex } from "./lib/hash";
 import { randomAvatarUrl } from "./lib/avatars";
 
 const MIN_PASSWORD_LENGTH = 6;
+const DEFAULT_STATUS = "Activo";
+const BANNED_STATUS = "Baneado";
+const DEFAULT_STATUS = "Activo";
+const BANNED_STATUS = "Baneado";
 
 export const updateProfile = mutation({
   args: {
@@ -27,7 +31,7 @@ export const updateProfile = mutation({
     }
     if (typeof newPassword === "string" && newPassword.length > 0) {
       if (newPassword.length < MIN_PASSWORD_LENGTH) {
-        throw new Error("La contraseña debe tener al menos 6 caracteres");
+        throw new Error("La contrasena debe tener al menos 6 caracteres");
       }
       patch.passwordHash = bcrypt.hashSync(newPassword, 10);
     }
@@ -44,19 +48,21 @@ export const createUser = mutation({
     email: v.string(),
     password: v.string(),
     role: v.union(v.literal("free"), v.literal("premium"), v.literal("admin")),
+    status: v.optional(v.union(v.literal(DEFAULT_STATUS), v.literal(BANNED_STATUS))),
   },
-  handler: async ({ db }, { name, email, password, role }) => {
+  handler: async ({ db }, { name, email, password, role, status }) => {
     const normalizedEmail = email.trim().toLowerCase();
     const exists = await db
       .query("profiles")
       .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
       .unique();
     if (exists) {
-      return { ok: false, error: "El email ya está registrado" } as const;
+      return { ok: false, error: "El email ya esta registrado" } as const;
     }
     const passwordHash = bcrypt.hashSync(password, 10);
     const now = Date.now();
     const avatarUrl = randomAvatarUrl(normalizedEmail);
+    const finalStatus = status ?? DEFAULT_STATUS;
     const _id = await db.insert("profiles", {
       name,
       email: normalizedEmail,
@@ -65,8 +71,12 @@ export const createUser = mutation({
       passwordHash,
       freeTrialUsed: false,
       avatarUrl,
+      status: finalStatus,
     });
-    return { ok: true, profile: { _id, name, email: normalizedEmail, role, createdAt: now } } as const;
+    return {
+      ok: true,
+      profile: { _id, name, email: normalizedEmail, role, status: finalStatus, createdAt: now },
+    } as const;
   },
 });
 
@@ -80,14 +90,22 @@ export const authLogin = mutation({
       .unique();
 
     if (!user) return { ok: false, error: "Usuario no encontrado" } as const;
+    const status = (user as any).status ?? DEFAULT_STATUS;
+    if (status === BANNED_STATUS) {
+      return { ok: false, error: "Tu cuenta fue baneada. Contacta a un administrador." } as const;
+    }
     if (!user.passwordHash) {
-      return { ok: false, error: "La cuenta no tiene contraseña configurada. Prueba a ingresar con google/xbox o reseteá tu contraseña." } as const;
+      return {
+        ok: false,
+        error:
+          "La cuenta no tiene contrasena configurada. Prueba a ingresar con google/xbox o resetea tu contrasena.",
+      } as const;
     }
     const match = bcrypt.compareSync(password, user.passwordHash);
-    if (!match) return { ok: false, error: "Credenciales inválidas" } as const;
+    if (!match) return { ok: false, error: "Credenciales invalidas" } as const;
 
     const { _id, name, role, createdAt } = user;
-    return { ok: true, profile: { _id, name, email: user.email, role, createdAt } } as const;
+    return { ok: true, profile: { _id, name, email: user.email, role, status, createdAt } } as const;
   },
 });
 
@@ -117,13 +135,19 @@ export const oauthUpsert = mutation({
         passwordHash: undefined,
         avatarUrl: fallbackAvatar,
         freeTrialUsed: false,
+        status: DEFAULT_STATUS,
       });
-      return { created: true, _id };
+      return { created: true, _id, status: DEFAULT_STATUS };
+    }
+
+    const currentStatus = (existing as any).status ?? DEFAULT_STATUS;
+    if (currentStatus === BANNED_STATUS) {
+      throw new Error("Tu cuenta fue baneada. Contacta a un administrador.");
     }
 
     const patch: Record<string, unknown> = {};
     if (args.name && args.name !== existing.name) patch.name = args.name;
-    const hasAvatar = Boolean((existing as any).avatarUrl && String((existing as any).avatarUrl).trim() !== "");
+    const hasAvatar = Boolean((existing as any).avatarUrl) && String((existing as any).avatarUrl).trim() !== "";
     if (!hasAvatar) {
       patch.avatarUrl = args.avatarUrl ?? randomAvatarUrl(email);
     }
@@ -131,7 +155,7 @@ export const oauthUpsert = mutation({
     if (Object.keys(patch).length) {
       await db.patch(existing._id, patch);
     }
-    return { created: false, _id: existing._id };
+    return { created: false, _id: existing._id, status: currentStatus };
   },
 });
 
@@ -201,8 +225,7 @@ export const resetPasswordWithToken = mutation({
         .unique();
     } catch {
       const all = await db.query("passwordResetTokens").collect();
-      stored =
-        all.find((t: any) => String(t.tokenHash) === tokenHash) ?? null;
+      stored = all.find((t: any) => String(t.tokenHash) === tokenHash) ?? null;
     }
 
     if (!stored) return { ok: false as const, error: "invalid_token" as const };
@@ -255,4 +278,3 @@ export const changePassword = mutation({
     return { ok: true as const };
   },
 });
-

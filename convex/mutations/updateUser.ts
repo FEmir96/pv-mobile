@@ -2,6 +2,8 @@
 import { mutation } from "../_generated/server";
 import { v } from "convex/values";
 
+const DEFAULT_STATUS = "Activo";
+
 export const updateUser = mutation({
   args: {
     requesterId: v.id("profiles"),                 // debe ser admin
@@ -11,8 +13,9 @@ export const updateUser = mutation({
     role: v.optional(
       v.union(v.literal("free"), v.literal("premium"), v.literal("admin"))
     ),
+    status: v.optional(v.union(v.literal("Activo"), v.literal("Baneado"))),
   },
-  handler: async ({ db }, { requesterId, userId, name, email, role }) => {
+  handler: async ({ db }, { requesterId, userId, name, email, role, status }) => {
     // 1) Permisos
     const requester = await db.get(requesterId);
     if (!requester || requester.role !== "admin") {
@@ -41,20 +44,24 @@ export const updateUser = mutation({
         .withIndex("by_email", (q) => q.eq("email", email))
         .unique();
       if (dupe && String(dupe._id) !== String(userId)) {
-        throw new Error(`El email "${email}" ya est├í en uso por otro usuario.`);
+        throw new Error(`El email "${email}" ya esta en uso por otro usuario.`);
       }
       updates.email = email;
       beforeSnapshot.email = user.email;
       afterSnapshot.email = email;
     }
 
-    if (role !== undefined) {
-      if (role === user.role) {
-        throw new Error(`El usuario ya tiene el rol "${role}".`);
-      }
+    if (role !== undefined && role !== user.role) {
       updates.role = role;
       beforeSnapshot.role = user.role;
       afterSnapshot.role = role;
+    }
+
+    const currentStatus = (user as any).status ?? DEFAULT_STATUS;
+    if (status !== undefined && status !== currentStatus) {
+      updates.status = status;
+      beforeSnapshot.status = currentStatus;
+      afterSnapshot.status = status;
     }
 
     if (Object.keys(updates).length === 0) {
@@ -64,7 +71,7 @@ export const updateUser = mutation({
     // 4) Aplicar cambios
     await db.patch(userId, updates);
 
-    // 5) Auditor├¡a
+    // 5) Auditoria
     await db.insert("audits", {
       action: "update_user",
       entity: "user",
