@@ -10,6 +10,18 @@ const DEFAULT_STATUS = "Activo";
 const BANNED_STATUS = "Baneado";
 const DEFAULT_STATUS = "Activo";
 const BANNED_STATUS = "Baneado";
+const DEFAULT_STATUS = "Activo";
+const BANNED_STATUS = "Baneado";
+const DEFAULT_STATUS = "Activo";
+const BANNED_STATUS = "Baneado";
+const DEFAULT_STATUS = "Activo";
+const BANNED_STATUS = "Baneado";
+const DEFAULT_STATUS = "Activo";
+const BANNED_STATUS = "Baneado";
+const DEFAULT_STATUS = "Activo";
+const BANNED_STATUS = "Baneado";
+const DEFAULT_STATUS = "Activo";
+const BANNED_STATUS = "Baneado";
 
 export const updateProfile = mutation({
   args: {

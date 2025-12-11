@@ -36,7 +36,7 @@ export const authLogin = mutation({
       } as const;
     }
 
-    const match = await bcrypt.compare(password, user.passwordHash);
+    const match = bcrypt.compareSync(password, user.passwordHash);
 
     if (!match) {
       return { ok: false, error: "Credenciales invalidas" } as const;
