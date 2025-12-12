@@ -8,20 +8,6 @@ import { randomAvatarUrl } from "./lib/avatars";
 const MIN_PASSWORD_LENGTH = 6;
 const DEFAULT_STATUS = "Activo";
 const BANNED_STATUS = "Baneado";
-const DEFAULT_STATUS = "Activo";
-const BANNED_STATUS = "Baneado";
-const DEFAULT_STATUS = "Activo";
-const BANNED_STATUS = "Baneado";
-const DEFAULT_STATUS = "Activo";
-const BANNED_STATUS = "Baneado";
-const DEFAULT_STATUS = "Activo";
-const BANNED_STATUS = "Baneado";
-const DEFAULT_STATUS = "Activo";
-const BANNED_STATUS = "Baneado";
-const DEFAULT_STATUS = "Activo";
-const BANNED_STATUS = "Baneado";
-const DEFAULT_STATUS = "Activo";
-const BANNED_STATUS = "Baneado";
 
 export const updateProfile = mutation({
   args: {

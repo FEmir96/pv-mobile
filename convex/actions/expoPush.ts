@@ -1,9 +1,19 @@
+// convex/actions/expoPush.ts
 "use node";
 
 import { action } from "../_generated/server";
+import { api } from "../_generated/api";
 import { v } from "convex/values";
 
 const EXPO_API = "https://api.expo.dev/v2/push/send";
+
+type SendResult =
+  | { ok: boolean; sent: number; response: unknown }
+  | { ok: true; sent: 0; reason: "no_tokens" };
+
+function isExpoToken(token: string) {
+  return token.startsWith("ExponentPushToken") || token.startsWith("ExpoPushToken");
+}
 
 export const send = action({
   args: {
@@ -13,12 +23,13 @@ export const send = action({
     data: v.optional(v.any()),
     androidColor: v.optional(v.string()),
   },
-  handler: async (ctx, { tokens, title, body, data, androidColor }) => {
+  handler: async (ctx, { tokens, title, body, data, androidColor }): Promise<SendResult> => {
     const cleanTokens = tokens
       .map((t) => (t || "").trim())
-      .filter((t) => t.length > 0);
+      .filter((t) => t.length > 0 && isExpoToken(t));
+
     if (!cleanTokens.length) {
-      return { ok: false, reason: "no_valid_tokens" as const };
+      return { ok: true, sent: 0, reason: "no_tokens" };
     }
 
     const messages = cleanTokens.map((to) => ({
@@ -30,7 +41,6 @@ export const send = action({
       android: androidColor ? { color: androidColor } : undefined,
     }));
 
-    // Expo push API espera un array de mensajes en el cuerpo (no envuelve en { messages }).
     const res = await fetch(EXPO_API, {
       method: "POST",
       headers: {
@@ -46,6 +56,51 @@ export const send = action({
       console.error("expoPush error", res.status, json);
     }
 
-    return { ok: res.ok, status: res.status, json };
+    return { ok: res.ok, sent: cleanTokens.length, response: json };
+  },
+});
+
+export const sendToProfile = action({
+  args: {
+    profileId: v.id("profiles"),
+    title: v.string(),
+    message: v.string(),
+    data: v.optional(v.any()),
+    androidColor: v.optional(v.string()),
+  },
+  handler: async (ctx, { profileId, title, message, data, androidColor }): Promise<SendResult> => {
+    const tokens = await ctx.runQuery(api.pushTokens.tokensForProfile, { profileId });
+    const expoTokens = (tokens as any[])
+      .map((t) => (t as any)?.token as string)
+      .filter((t) => typeof t === "string" && isExpoToken(t));
+
+    if (!expoTokens.length) {
+      return { ok: true, sent: 0, reason: "no_tokens" };
+    }
+
+    const messages = expoTokens.map((to) => ({
+      to,
+      title,
+      body: message,
+      data,
+      sound: null,
+      android: androidColor ? { color: androidColor } : undefined,
+    }));
+
+    const res = await fetch(EXPO_API, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(messages),
+    });
+
+    const json = await res.json();
+    if (!res.ok) {
+      console.error("expoPush sendToProfile error", res.status, json);
+    }
+
+    return { ok: res.ok, sent: expoTokens.length, response: json };
   },
 });
